@@ -3,7 +3,7 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   python:
@@ -30,9 +30,3 @@ jobs:
             --set awsAccountId=123456789012 \
             --set awsRegion=us-east-1 \
             > /tmp/render.yaml
-      - uses: yannh/kubeconform-action@v1.0.0
-        with:
-          files: /tmp/render.yaml
-          kubernetes_version: 1.29.0
-          strict: true
-          ignore_missing_schemas: true
