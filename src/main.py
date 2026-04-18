@@ -20,8 +20,8 @@ logger = logging.getLogger("ecr-ptc-webhook")
 
 
 def _load_rewriter() -> Rewriter:
-    account_id = os.environ["AWS_ACCOUNT_ID"]
-    region = os.environ["AWS_REGION"]
+    account_id = os.environ["ECR_REGISTRY_ACCOUNT_ID"]
+    region = os.environ["ECR_REGISTRY_REGION"]
 
     config_path = os.getenv("REGISTRIES_CONFIG_PATH")
     if config_path and Path(config_path).exists():

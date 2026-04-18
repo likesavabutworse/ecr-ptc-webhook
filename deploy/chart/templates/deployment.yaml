@@ -44,9 +44,9 @@ spec:
             capabilities:
               drop: [ALL]
           env:
-            - name: AWS_ACCOUNT_ID
+            - name: ECR_REGISTRY_ACCOUNT_ID
               value: {{ required "awsAccountId is required" .Values.awsAccountId | quote }}
-            - name: AWS_REGION
+            - name: ECR_REGISTRY_REGION
               value: {{ required "awsRegion is required" .Values.awsRegion | quote }}
             - name: REGISTRIES_CONFIG_PATH
               value: /config/registries.yaml
