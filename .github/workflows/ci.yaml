@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync --frozen || uv sync
+      - run: uv run ruff check src
+      - run: uv run python -m compileall src
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+      - run: helm lint deploy/chart
+      - run: |
+          helm template test deploy/chart \
+            --set awsAccountId=123456789012 \
+            --set awsRegion=us-east-1 \
+            > /tmp/render.yaml
+      - uses: yannh/kubeconform-action@v1.0.0
+        with:
+          files: /tmp/render.yaml
+          kubernetes_version: 1.29.0
+          strict: true
+          ignore_missing_schemas: true
