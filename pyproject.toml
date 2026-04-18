@@ -1,0 +1,25 @@
+[project]
+name = "ecr-ptc-webhook"
+version = "0.1.0"
+description = "Kubernetes mutating admission webhook that rewrites images to ECR pull-through cache paths"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.116.1",
+    "prometheus-client>=0.22.0",
+    "pyyaml>=6.0.2",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.7.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
