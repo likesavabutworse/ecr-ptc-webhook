@@ -1,0 +1,34 @@
+{{- if eq .Values.tls.mode "certManager" -}}
+{{- if not .Values.tls.certManager.issuerRef.name -}}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "ecr-ptc-webhook.selfSignedIssuerName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ecr-ptc-webhook.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+{{- end }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "ecr-ptc-webhook.certificateName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ecr-ptc-webhook.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "ecr-ptc-webhook.tlsSecretName" . }}
+  duration: 8760h   # 1 year
+  renewBefore: 720h # 30 days
+  commonName: {{ include "ecr-ptc-webhook.fullname" . }}.{{ .Release.Namespace }}.svc
+  dnsNames:
+    - {{ include "ecr-ptc-webhook.fullname" . }}
+    - {{ include "ecr-ptc-webhook.fullname" . }}.{{ .Release.Namespace }}
+    - {{ include "ecr-ptc-webhook.fullname" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "ecr-ptc-webhook.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: {{ .Values.tls.certManager.issuerRef.kind }}
+    name: {{ .Values.tls.certManager.issuerRef.name | default (include "ecr-ptc-webhook.selfSignedIssuerName" .) }}
+{{- end }}

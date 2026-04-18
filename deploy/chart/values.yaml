@@ -1,0 +1,101 @@
+# -- AWS account that owns the ECR private registry where pull-through cache rules live.
+awsAccountId: ""
+# -- AWS region the ECR private registry is in.
+awsRegion: ""
+
+image:
+  repository: ghcr.io/likesavabutworse/ecr-ptc-webhook
+  tag: "" # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+replicaCount: 2
+
+# Registries the webhook will rewrite. Each entry becomes a rewrite rule:
+#   <host>/path  ->  <awsAccountId>.dkr.ecr.<awsRegion>.amazonaws.com/<ecrPrefix>/path
+#
+# dockerhub: true normalizes bare names ("nginx" -> "library/nginx") and matches
+# the docker.io/index.docker.io/registry-1.docker.io aliases.
+#
+# For Azure Container Registry, add one entry per Azure registry hostname.
+registries:
+  - host: docker.io
+    ecrPrefix: docker.io
+    dockerhub: true
+  - host: quay.io
+    ecrPrefix: quay.io
+  - host: ghcr.io
+    ecrPrefix: ghcr.io
+  - host: registry.gitlab.com
+    ecrPrefix: registry.gitlab.com
+  - host: cgr.dev
+    ecrPrefix: cgr.dev
+  # - host: myregistry.azurecr.io
+  #   ecrPrefix: myregistry.azurecr.io
+
+  # Controls which namespaces the webhook mutates. Defaults to any namespace not
+  # labeled with `ecr-ptc-webhook/ignore=true`, plus skipping the
+  # release namespace and kube-system.
+webhook:
+  failurePolicy: Ignore
+  reinvocationPolicy: IfNeeded
+  timeoutSeconds: 5
+  # Extra namespaceSelector matchExpressions appended to the defaults.
+  extraNamespaceSelectorMatchExpressions: []
+  # Optional objectSelector applied to the pod being admitted.
+  objectSelector: {}
+
+tls:
+  # `certManager` provisions a Certificate via cert-manager (recommended).
+  # `existingSecret` mounts an existing TLS secret you supply.
+  mode: certManager
+  certManager:
+    issuerRef:
+      kind: Issuer
+      name: "" # leave empty to create a self-signed Issuer in the release namespace
+  existingSecret:
+    name: ""
+
+service:
+  type: ClusterIP
+  port: 443
+  targetPort: 8443
+
+metrics:
+  service:
+    port: 9090
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    relabelings: []
+    metricRelabelings: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+logLevel: INFO

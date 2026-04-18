@@ -1,0 +1,47 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "ecr-ptc-webhook.fullname" . }}
+  labels:
+    {{- include "ecr-ptc-webhook.labels" . | nindent 4 }}
+  {{- if eq .Values.tls.mode "certManager" }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "ecr-ptc-webhook.certificateName" . }}
+  {{- end }}
+webhooks:
+  - name: ecr-ptc
+    admissionReviewVersions: [v1]
+    sideEffects: None
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
+    reinvocationPolicy: {{ .Values.webhook.reinvocationPolicy }}
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    matchPolicy: Equivalent
+    clientConfig:
+      service:
+        name: {{ include "ecr-ptc-webhook.fullname" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate
+        port: {{ .Values.service.port }}
+    rules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE]
+        resources: [pods]
+        scope: Namespaced
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - {{ .Release.Namespace }}
+            - kube-system
+        - key: ecr-ptc-webhook/ignore
+          operator: NotIn
+          values: ["true"]
+        {{- with .Values.webhook.extraNamespaceSelectorMatchExpressions }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    {{- with .Values.webhook.objectSelector }}
+    objectSelector:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
